@@ -51,6 +51,20 @@ return new class extends Migration
             $table->longText('payload');
             $table->integer('last_activity')->index();
         });
+
+        Schema::create('followers', function (Blueprint $table) {
+            $table->id();
+            $table->unsignedBigInteger('followed_id');
+            $table->unsignedBigInteger('follower_id');
+            $table->timestamps();
+
+            $table->foreign('followed_id')->references('id')->on('users')->onDelete('cascade');
+            $table->foreign('follower_id')->references('id')->on('users')->onDelete('cascade');
+            $table->unique(['followed_id', 'follower_id']);
+        });
+
+
+
     }
 
     /**
@@ -61,5 +75,7 @@ return new class extends Migration
         Schema::dropIfExists('users');
         Schema::dropIfExists('password_reset_tokens');
         Schema::dropIfExists('sessions');
+        Schema::dropIfExists('followers');
+
     }
 };

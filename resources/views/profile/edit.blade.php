@@ -48,7 +48,52 @@
             <input type="text" class="form-control" id="phone" name="phone" value="{{ old('phone', Auth::user()->phone) }}" placeholder="Enter your phone number">
         </div>
 
+        <!-- Specialties (max 3) -->
+        <div class="mb-3">
+            <label class="form-label">Specialties <small class="text-muted">(Choose up to 3)</small></label>
+            @php
+                $options = [
+                    'Soups','Stews','Stir-fries','Grills / Barbecues','Roasts','Curries',
+                    'Bakes / Casseroles','Sandwiches / Wraps / Burgers','Noodles / Pasta',
+                    'Rice dishes','Pies / Tarts','Pancakes / Crepes / Waffles','Dumplings',
+                    'Skewers / Kebabs','Sushi / Sashimi','Pickles / Fermented foods',
+                    'Dips / Spreads','Smoothies / Shakes'
+                ];
+                $current = old('specialties', Auth::user()->specialties ? explode(',', Auth::user()->specialties) : []);
+            @endphp
+            <div id="specialties-group">
+                @foreach($options as $idx => $opt)
+                    <div class="form-check form-check-inline">
+                        <input
+                          class="form-check-input specialty-checkbox"
+                          type="checkbox"
+                          id="spec-{{ $idx }}"
+                          name="specialties[]"
+                          value="{{ $opt }}"
+                          {{ in_array($opt, $current) ? 'checked' : '' }}>
+                        <label class="form-check-label" for="spec-{{ $idx }}">{{ $opt }}</label>
+                    </div>
+                @endforeach
+            </div>
+            @error('specialties')
+                <div class="text-danger">{{ $message }}</div>
+            @enderror
+        </div>
+
         <button type="submit" class="btn btn-primary">Update Profile</button>
     </form>
 </div>
+
+<script>
+  // enforce max 3 specialties
+  document.querySelectorAll('.specialty-checkbox').forEach(cb => {
+    cb.addEventListener('change', function(){
+      const checked = document.querySelectorAll('.specialty-checkbox:checked');
+      if(checked.length > 3){
+        this.checked = false;
+        alert('You can select up to 3 specialties only.');
+      }
+    });
+  });
+</script>
 @endsection

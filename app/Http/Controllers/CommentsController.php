@@ -6,28 +6,82 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use App\Models\Comment;
 use App\Models\Recipe;
+use App\Notifications\RecipeCommented;
 
 class CommentsController extends Controller
 {
     /**
-     * Store a newly created comment in storage.
+     * Store a new comment and notify the recipe owner.
      */
     public function store(Request $request)
     {
-        // Validate the form data
         $request->validate([
             'recipe_id' => 'required|exists:recipes,id',
-            'body'      => 'required|max:3000',
+            'body'      => 'required|string',
         ]);
 
-        // Create the comment
-        $comment = new Comment();
-        $comment->recipe_id = $request->input('recipe_id');
-        $comment->user_id   = Auth::id(); // The currently logged-in user
-        $comment->body      = $request->input('body');
+        $comment = Comment::create([
+            'user_id'   => $request->user()->id,
+            'recipe_id' => $request->input('recipe_id'),
+            'body'      => $request->input('body'),
+        ]);
+
+        // Notify recipe owner
+        $recipe = Recipe::find($comment->recipe_id);
+        if ($recipe->user_id !== $request->user()->id) {
+            $recipe->user->notify(new RecipeCommented(
+                $request->user(),
+                $recipe,
+                $comment
+            ));
+        }
+
+        return back()->with('success', 'Comment posted!');
+    }
+
+    /**
+     * Show the edit form for an existing comment.
+     */
+    public function edit(Comment $comment)
+    {
+        // only the owner may edit
+        if (Auth::id() !== $comment->user_id) {
+            abort(403, 'Unauthorized action.');
+        }
+
+        return view('comments.edit', compact('comment'));
+    }
+
+    /**
+     * Update an existing comment.
+     */
+    public function update(Request $request, Comment $comment)
+    {
+        if (Auth::id() !== $comment->user_id) {
+            abort(403, 'Unauthorized action.');
+        }
+
+        $request->validate([
+            'body' => 'required|string',
+        ]);
+
+        $comment->body = $request->input('body');
         $comment->save();
 
-        // Redirect back to the previous page (or anywhere you prefer)
-        return redirect()->back()->with('success', 'Comment posted successfully!');
+        return back()->with('success', 'Comment updated!');
+    }
+
+    /**
+     * Delete a comment.
+     */
+    public function destroy(Comment $comment)
+    {
+        if (Auth::id() !== $comment->user_id) {
+            abort(403, 'Unauthorized action.');
+        }
+
+        $comment->delete();
+
+        return back()->with('success', 'Comment deleted!');
     }
 }

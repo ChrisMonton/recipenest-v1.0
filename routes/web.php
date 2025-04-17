@@ -1,106 +1,146 @@
 <?php
 
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\ChefListController;
+use Illuminate\Support\Facades\Auth;
+
+// Controllers
 use App\Http\Controllers\HomeController;
-use App\Http\Controllers\RecipeController;
-use App\Http\Controllers\FollowController;
-use App\Http\Controllers\Auth\RegisterController;
-use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\AboutController;
 use App\Http\Controllers\NotificationController;
+use App\Http\Controllers\ChefListController;
+use App\Http\Controllers\RecipeController;
 use App\Http\Controllers\RecipeListBrowseController;
+use App\Http\Controllers\FollowController;
+use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\PortfolioController;
 use App\Http\Controllers\CommentsController;
-// Auth routes (including register/login)
+use App\Http\Controllers\LikeController;
+use App\Http\Controllers\AccountController;
+use App\Http\Controllers\Auth\RegisterController;
+
+// Authentication / Registration
 Auth::routes();
 
-
-Route::middleware('auth')->group(function () {
-    Route::get('/notifications', [NotificationController::class, 'index'])->name('notifications.index');
-    Route::post('/notifications/mark-as-read', [NotificationController::class, 'markAllAsRead'])->name('notifications.markAllAsRead');
-});
-
-//profile routes
-Route::middleware('auth')->group(function () {
-    Route::get('/profile', [ProfileController::class, 'myProfile'])->name('profile');
-       // Show a profile using route model binding
-       Route::get('profile/{user}', [ProfileController::class, 'show'])->name('profile.show');
-
-     // Show edit form for the user's profile
-     Route::get('/profile/edit', [ProfileController::class, 'edit'])->name('profile.edit');
-
-     // Update the user's profile
-     Route::put('/profile/update', [ProfileController::class, 'update'])->name('profile.update');
-
- });
-
-//registration route
-
+// Registration wizard (2‑step)
 Route::get('/register', [RegisterController::class, 'showStep12Form'])
-    ->name('register.show');
-
-// Form POST after Steps 1 & 2
-
+     ->name('register.show');
 Route::post('/register', [RegisterController::class, 'processStep12'])
-    ->name('register');
+     ->name('register');
+
+// Public pages
+Route::get('/',        [HomeController::class, 'index'])->name('homepage');
+Route::get('/home',    [HomeController::class, 'index'])->name('home');
+Route::get('/about',   [AboutController::class, 'index'])->name('about');
 
 
-// Home route
-
-Route::get('/', [HomeController::class, 'index'])->name('homepage');
-Route::get('/home', [HomeController::class, 'index'])->name('home');
-
-Route::get('/about', [AboutController::class, 'index'])->name('about');
-
-
-
-// My recipes route
-
+// All routes below require authentication
 Route::middleware('auth')->group(function () {
-    // Show authenticated user's recipes
-    Route::get('/my-recipes', [RecipeController::class, 'myRecipes'])->name('myrecipes.index');
+
     //
-    Route::get('/recipes/user/{user}', [\App\Http\Controllers\RecipeListBrowseController::class, 'byUser'])
-    ->name('recipes.byuser');
+    // Notifications
+    //
+    Route::get('/notifications', [NotificationController::class, 'index'])
+         ->name('notifications.index');
+    Route::post('/notifications/mark-as-read', [NotificationController::class, 'markAllAsRead'])
+         ->name('notifications.markAllAsRead');
 
-    //recipes.show
+    //
+    // Likes (toggle)
+    //
+    Route::post('/recipes/{recipe}/like', [LikeController::class, 'toggle'])
+         ->name('recipes.like');
 
-    //Route::get('/recipes/{recipe}', [\App\Http\Controllers\RecipeController::class, 'show'])->name('recipes.recipes');
+    //
+    // Profile
+    //
+    Route::get('/profile',           [ProfileController::class, 'myProfile'])
+         ->name('profile');
+    Route::get('/profile/edit',      [ProfileController::class, 'edit'])
+         ->name('profile.edit');
+    Route::put('/profile/update',    [ProfileController::class, 'update'])
+         ->name('profile.update');
+    Route::get('/profile/{user}',    [ProfileController::class, 'show'])
+         ->name('profile.show');
 
-    // Display the form for creating a new recipe
-    Route::get('/recipes/create', [RecipeController::class, 'create'])->name('recipes.create');
+    //
+    // Follow / Unfollow
+    //
+    Route::get('/follow/{user}',   [FollowController::class, 'follow'])
+         ->name('follow');
+    Route::get('/unfollow/{user}', [FollowController::class, 'unfollow'])
+         ->name('unfollow');
 
-    // Handle the form submission to store a new recipe
-    Route::post('/recipes', [RecipeController::class, 'store'])->name('recipes.store');
+    //
+    // Account management (name, email, password)
+    //
+    Route::get('/account/manage', [AccountController::class, 'manage'])
+         ->name('account.manage');
+    Route::put('/account/manage', [AccountController::class, 'update'])
+         ->name('account.update');
 
-    //edit recipes route
-    Route::get('/recipes/{id}/edit', [RecipeController::class, 'edit'])->name('recipes.edit');
-    Route::delete('/recipes/{id}', [RecipeController::class, 'destroy'])->name('recipes.destroy');
-    Route::get('/recipes/{id}', [RecipeController::class, 'show'])->name('recipes.recipes');
-    Route::get('/recipes/create', [RecipeController::class, 'create'])->name('recipes.create');
-});
+    //
+    // Chef List (directory of users)
+    //
+    Route::get('/cheflist', [ChefListController::class, 'index'])
+         ->name('cheflist.index');
+
+    //
+    // Portfolio
+    //
+    Route::get('/portfolio/{user}',      [PortfolioController::class, 'show'])
+         ->name('portfolio.show');
+    Route::get('/portfolio/{user}/edit', [PortfolioController::class, 'edit'])
+         ->name('portfolio.edit');
+    Route::put('/portfolio/{user}',      [PortfolioController::class, 'update'])
+         ->name('portfolio.update');
+
+    //
+    // Recipe CRUD
+    //
+    //  • Browse all recipes
+
+    //  • Create
+    Route::get('/recipes/create',      [RecipeController::class, 'create'])
+         ->name('recipes.create');
+    Route::post('/recipes',            [RecipeController::class, 'store'])
+         ->name('recipes.store');
+
+    //  • Read / Detail
+    Route::get('/recipes/{recipe}',    [RecipeController::class, 'show'])
+         ->name('recipes.show');
+
+    //  • Update
+    Route::get('/recipes/{recipe}/edit',[RecipeController::class, 'edit'])
+         ->name('recipes.edit');
+    Route::put('/recipes/{recipe}',    [RecipeController::class, 'update'])
+         ->name('recipes.update');
+
+    //  • Delete
+    Route::delete('/recipes/{recipe}', [RecipeController::class, 'destroy'])
+         ->name('recipes.destroy');
+
+         Route::get('/recipes', [RecipeController::class,'index'])
+     ->name('recipes.index');
 
 
-Route::middleware('auth')->group(function () {
-    Route::get('/recipes', [RecipeListBrowseController::class, 'index'])->name('recipes.index');
-});
 
-//Recipes browse list route
-Route::middleware('auth')->group(function () {
-    // Browse Recipes (excluding logged-in user's own recipes)
-    Route::get('/browse-recipes', [RecipeListBrowseController::class, 'index'])->name('recipes.browse');
+    //
+    // A separate “browse” path if you need to exclude the owner’s own recipes
+    //
+    Route::get('/browse-recipes',      [RecipeListBrowseController::class, 'index'])
+         ->name('recipes.browse');
+    Route::get('/browse-recipes/{id}', [RecipeListBrowseController::class, 'show'])
+         ->name('recipes.browse.show');
 
-    // Show specific recipe detail
-    Route::get('/browse-recipes/{id}', [RecipeListBrowseController::class, 'show'])->name('recipes.browse.show');
-
-
-// Route to show all chefs/authors
-Route::get('/cheflist', [ChefListController::class, 'index'])->name('cheflist.index');
-
-Route::post('/comments', [CommentsController::class, 'store'])->name('comments.store');
-
-
-
-
+    //
+    // Comments
+    //
+    Route::post('/comments',                [CommentsController::class, 'store'])
+         ->name('comments.store');
+    Route::get('/comments/{comment}/edit',  [CommentsController::class, 'edit'])
+         ->name('comments.edit');
+    Route::put('/comments/{comment}',       [CommentsController::class, 'update'])
+         ->name('comments.update');
+    Route::delete('/comments/{comment}',    [CommentsController::class, 'destroy'])
+         ->name('comments.destroy');
 });

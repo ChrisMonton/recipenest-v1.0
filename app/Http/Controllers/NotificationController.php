@@ -17,7 +17,7 @@ class NotificationController extends Controller
         $user = Auth::user();
         // Now $user->notifications() exists because Notifiable is used
         $notifications = $user->notifications()->orderBy('created_at', 'desc')->paginate(10);
-        return view('layouts.notifications', compact('notifications'));
+        return view('notifications.index', compact('notifications'));
     }
 
     /**

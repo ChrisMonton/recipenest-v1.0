@@ -38,6 +38,12 @@
       background-color: #8d5c1f;
       border-color: #8d5c1f;
     }
+    /* Style for error messages */
+    .error {
+      color: red;
+      font-size: 0.9rem;
+      margin-top: 5px;
+    }
   </style>
 </head>
 <body>
@@ -64,7 +70,6 @@
           <a class="nav-link text-white" href="{{ url('/') }}">Home</a>
         </li>
       </ul>
-
     </div>
   </div>
 </nav>
@@ -73,10 +78,8 @@
 <div class="reg-container">
   <div class="reg-box">
     <h3 class="mb-4 text-center">Registration</h3>
-    <!-- Step 1 & 2 share the same form to gather data,
-         then POST to a controller or route that processes
-         these fields and redirects to /profile-setup. -->
-    <form method="POST" action="{{ route('register') }}">
+    <!-- The form gathers data and then POSTs to a route that processes registration -->
+    <form method="POST" action="{{ route('register') }}" id="registrationForm">
       @csrf
 
       <!-- STEP 1 -->
@@ -106,18 +109,26 @@
           <div class="col-md-6">
             <label for="password_confirmation" class="form-label fw-bold">Confirm Password</label>
             <input type="password" class="form-control" id="password_confirmation" name="password_confirmation" required>
+            <div id="passwordError" class="error"></div>
           </div>
         </div>
-        <!-- Phone -->
+        <!-- Phone with country code selection -->
         <div class="mb-4">
           <label for="phone" class="form-label fw-bold">Phone No.</label>
-          <input type="text" class="form-control" id="phone" name="phone">
+          <div class="input-group">
+            <select name="phone_code" id="phone_code" class="form-select" required>
+              <option value="+1">+1</option>
+              <option value="+44">+44</option>
+              <option value="+91">+91</option>
+              <!-- Add more codes as needed -->
+            </select>
+            <input type="text" class="form-control" id="phone" name="phone" placeholder="Phone Number" required>
+          </div>
+          <div id="phoneError" class="error"></div>
         </div>
         <!-- Next Button -->
         <div class="text-end">
-          <button type="button" class="btn btn-gold px-4 py-2" onclick="showStep2()">
-            Next
-          </button>
+          <button type="button" class="btn btn-gold px-4 py-2" onclick="showStep2()">Next</button>
         </div>
       </div>
 
@@ -126,7 +137,7 @@
         <!-- DOB -->
         <div class="mb-3">
           <label for="date_of_birth" class="form-label fw-bold">Date of Birth</label>
-          <input type="date" class="form-control" id="date_of_birth" name="date_of_birth">
+          <input type="date" class="form-control" id="date_of_birth" name="date_of_birth" required>
         </div>
         <!-- Role -->
         <div class="mb-4">
@@ -139,9 +150,7 @@
 
         <!-- Final "Continue" Button -->
         <div class="text-end">
-          <button type="submit" class="btn btn-gold px-4 py-2">
-            Continue
-          </button>
+          <button type="submit" class="btn btn-gold px-4 py-2">Continue</button>
         </div>
       </div>
 
@@ -150,10 +159,42 @@
 </div>
 
 <script>
+  // Function to validate step 1 and show step 2
   function showStep2() {
-    document.getElementById('step1').style.display = 'none';
-    document.getElementById('step2').style.display = 'block';
+      // Clear any previous errors
+      document.getElementById('passwordError').innerText = "";
+      document.getElementById('phoneError').innerText = "";
+
+      var firstName = document.getElementById('first_name').value.trim();
+      var surname = document.getElementById('surname').value.trim();
+      var email = document.getElementById('email').value.trim();
+      var password = document.getElementById('password').value;
+      var confirmPassword = document.getElementById('password_confirmation').value;
+      var phone = document.getElementById('phone').value.trim();
+      var phoneCode = document.getElementById('phone_code').value.trim();
+
+      if(!firstName || !surname || !email || !password || !confirmPassword || !phone || !phoneCode) {
+          alert("All fields in step 1 are required.");
+          return;
+      }
+
+      if(password !== confirmPassword) {
+          document.getElementById('passwordError').innerText = "Passwords do not match.";
+          return;
+      }
+
+      // If validation passes, move to step 2
+      document.getElementById('step1').style.display = 'none';
+      document.getElementById('step2').style.display = 'block';
   }
+
+  // Add event listener so that pressing the Enter key in Step 1 triggers showStep2()
+  document.getElementById('step1').addEventListener('keypress', function(e) {
+      if (e.key === "Enter") {
+          e.preventDefault();
+          showStep2();
+      }
+  });
 </script>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>

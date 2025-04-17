@@ -2,26 +2,58 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Recipe;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use App\Models\Recipe;
+use App\Notifications\RecipeLiked;    // you'll need to create this notification
+use App\Notifications\RecipeCommented;
 
 class RecipeController extends Controller
 {
     /**
-     * Show a listing of the authenticated user's recipes.
+     * Display a paginated listing of recipes.
      */
-    public function myRecipes()
-    {
-        $recipes = Recipe::where('user_id', Auth::id())
-                         ->latest()
-                         ->paginate(10);
+    // RecipeController.php
+public function index()
+{
+    $recipes = Recipe::latest()->paginate(12);
+    return view('recipes.index', compact('recipes'));
+}
 
-        return view('recipes.my-recipes', compact('recipes'));
+
+    /**
+     * Toggle “like” (love) on a recipe.
+     */
+    public function like(Recipe $recipe)
+    {
+        $me = Auth::user();
+
+        // toggle the pivot entry
+        if ($recipe->likes()->where('user_id', $me->id)->exists()) {
+            $recipe->likes()->detach($me->id);
+        } else {
+            $recipe->likes()->attach($me->id);
+
+            // notify the owner if it’s not themselves
+            if ($recipe->user_id !== $me->id) {
+                $recipe->user->notify(new RecipeLiked($me, $recipe));
+            }
+        }
+
+        return back();
     }
 
     /**
-     * Display the form for creating a new recipe.
+     * Show a single recipe (if you still need a dedicated detail page).
+     */
+    public function show(Recipe $recipe)
+    {
+        $recipe->load(['user', 'comments.user', 'likes']);
+        return view('recipes.show', compact('recipe'));
+    }
+
+    /**
+     * Show form to create a new recipe.
      */
     public function create()
     {
@@ -29,40 +61,92 @@ class RecipeController extends Controller
     }
 
     /**
-     * Store a newly created recipe in storage.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @return \Illuminate\Http\RedirectResponse
+     * Store a newly created recipe.
      */
     public function store(Request $request)
     {
-        // Validate incoming request data.
         $request->validate([
             'title'            => 'required|max:255',
             'ingredients'      => 'required',
-            'instructions'     => 'required',        // Corresponds to your migration field "instructions"
-            'full_description' => 'required',        // Corresponds to your migration field "full_description"
+            'instructions'     => 'required',
+            'full_description' => 'required',
+            'public'           => 'required|boolean',
             'image'            => 'nullable|image|mimes:jpg,jpeg,png,gif|max:2048',
-            'public'           => 'required|boolean',  // Updated from is_public to public
         ]);
 
-        $recipe = new Recipe();
-        $recipe->user_id = Auth::id();
-        $recipe->title = $request->input('title');
-        $recipe->ingredients = $request->input('ingredients');
-        $recipe->instructions = $request->input('instructions');
-        $recipe->full_description = $request->input('full_description');
-        $recipe->public = $request->input('public');  // Use the column "public" as defined in your migration
-
-        // Handle image upload if provided.
-        if ($request->hasFile('image')) {
-            $path = $request->file('image')->store('recipe-images', 'public');
-            $recipe->image = $path;
-        }
-
-        $recipe->save();
+        Recipe::create([
+            'user_id'          => Auth::id(),
+            'title'            => $request->title,
+            'ingredients'      => $request->ingredients,
+            'instructions'     => $request->instructions,
+            'full_description' => $request->full_description,
+            'public'           => $request->public,
+            'image'            => $request->hasFile('image')
+                                    ? $request->file('image')->store('recipe-images','public')
+                                    : null,
+        ]);
 
         return redirect()->route('myrecipes.index')
-                         ->with('success', 'Recipe created successfully!');
+                         ->with('success','Recipe created!');
+    }
+
+    /**
+     * Show form to edit an existing recipe.
+     */
+    public function edit(Recipe $recipe)
+    {
+        if (Auth::id() !== $recipe->user_id) {
+            abort(403, 'Unauthorized action.');
+        }
+
+        return view('recipes.edit', compact('recipe'));
+    }
+
+    /**
+     * Update an existing recipe.
+     */
+    public function update(Request $request, Recipe $recipe)
+    {
+        if (Auth::id() !== $recipe->user_id) {
+            abort(403, 'Unauthorized action.');
+        }
+
+        $request->validate([
+            'title'            => 'required|max:255',
+            'ingredients'      => 'required',
+            'instructions'     => 'required',
+            'full_description' => 'required',
+            'public'           => 'required|boolean',
+            'image'            => 'nullable|image|mimes:jpg,jpeg,png,gif|max:2048',
+        ]);
+
+        $data = $request->only([
+            'title','ingredients','instructions','full_description','public'
+        ]);
+
+        if ($request->hasFile('image')) {
+            $data['image'] = $request->file('image')
+                                 ->store('recipe-images','public');
+        }
+
+        $recipe->update($data);
+
+        return redirect()->route('myrecipes.index')
+                         ->with('success','Recipe updated!');
+    }
+
+    /**
+     * Delete a recipe.
+     */
+    public function destroy(Recipe $recipe)
+    {
+        if (Auth::id() !== $recipe->user_id) {
+            abort(403, 'Unauthorized action.');
+        }
+
+        $recipe->delete();
+
+        return redirect()->route('myrecipes.index')
+                         ->with('success','Recipe deleted!');
     }
 }

@@ -10,11 +10,18 @@
         padding: 0;
     }
 
-    /* Container heading style (white text for contrast against gradient) */
-    .container h2 {
-        color: #fff;
+    /* Ensure the container's content isn’t hidden by the fixed navbar. */
+    .container.page-container {
+        padding-top: 100px; /* Adjust this value as needed to push the content down */
+    }
+
+    /* Page title style similar to recipes.blade.php */
+    .page-title {
         text-align: center;
-        margin-bottom: 40px;
+        font-size: 2rem;     /* Same as the Recipes page title */
+        font-weight: bold;   /* Same as the Recipes page title */
+        color: #333;         /* Same as the Recipes page title */
+        margin-bottom: 30px; /* Adjust spacing as needed */
     }
 
     /* Card wrapper */
@@ -63,7 +70,6 @@
         margin-bottom: 8px;
     }
 
-    /* Bold label in front of role or specialties if desired */
     .chef-role strong,
     .chef-specialties strong {
         color: #333;
@@ -98,8 +104,10 @@
 @endsection
 
 @section('content')
-<div class="container my-5">
-    <h2>Chefs &amp; Users</h2>
+<!-- Added a class "page-container" for padding-top -->
+<div class="container my-3 page-container">
+    <!-- Updated heading to match the style from recipes.blade.php -->
+    <h2 class="page-title">Chefs &amp; Users</h2>
 
     @if($chefs->count())
         <div class="row justify-content-center">

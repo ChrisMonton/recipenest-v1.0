@@ -98,6 +98,24 @@ class User extends Authenticatable
         $query->where('id', $id);
     }
 
+    public function followers()
+{
+    // Users who follow this user
+    return $this->belongsToMany(User::class, 'followers', 'followed_id', 'follower_id');
+}
+
+public function following()
+{
+    // Users this user is following
+    return $this->belongsToMany(User::class, 'followers', 'follower_id', 'followed_id');
+}
+
+public function portfolio()
+{
+    return $this->hasOne(\App\Models\Portfolio::class);
+}
+
+
     // =============== FUNCTIONS ===============
 
     /**
@@ -140,5 +158,11 @@ class User extends Authenticatable
     public function getNameAttribute()
     {
         return ucfirst($this->first_name);
+    }
+
+    public function likedRecipes()
+    {
+        return $this->belongsToMany(\App\Models\Recipe::class, 'likes')
+                    ->withTimestamps();
     }
 }

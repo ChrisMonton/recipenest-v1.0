@@ -56,8 +56,19 @@ class Recipe extends Model
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class, 'user_id');
+        return $this->belongsTo(\App\Models\User::class);
     }
 
+// in app/Models/Recipe.php
+public function comments()
+{
+    return $this->hasMany(\App\Models\Comment::class);
+}
+
+public function recipe()
+{
+    return $this->belongsTo(\App\Models\Recipe::class);
+}
 
 
     /**
@@ -118,6 +129,12 @@ class Recipe extends Model
     public function formatDate()
     {
         return Carbon::parse($this->publish_date)->format('Y-m-d');
+    }
+
+    public function likes()
+    {
+        return $this->belongsToMany(\App\Models\User::class, 'likes')
+                    ->withTimestamps();
     }
 
 

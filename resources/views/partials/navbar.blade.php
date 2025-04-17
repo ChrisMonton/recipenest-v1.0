@@ -17,7 +17,11 @@
                 </li>
                 @guest
                     <li class="nav-item">
-                        <a class="nav-link text-white" href="#">Sample Recipes</a>
+                        @if(Route::currentRouteName() == 'about')
+                            <a class="nav-link text-white" href="{{ url('/#sample-recipes') }}">Sample Recipes</a>
+                        @else
+                            <a class="nav-link text-white" href="#sample-recipes">Sample Recipes</a>
+                        @endif
                     </li>
                 @endguest
                 @auth
@@ -36,23 +40,18 @@
             <!-- Right Side Of Navbar -->
             <ul class="navbar-nav ms-auto d-flex align-items-center">
                 @guest
-                    @if (Route::has('login'))
-                        <li class="nav-item">
-                            <a class="nav-link text-white" href="javascript:void(0);"
-                               data-bs-toggle="modal" data-bs-target="#loginModal">
-                                {{ __('Login') }}
-                            </a>
-                        </li>
-                    @endif
-                    @if (Route::has('register'))
-                        <li class="nav-item">
-                            <a class="nav-link text-white" href="{{ route('register') }}">
-                                {{ __('Register') }}
-                            </a>
-                        </li>
-                    @endif
+                    <li class="nav-item">
+                        <a class="nav-link text-white" href="javascript:void(0);" data-bs-toggle="modal" data-bs-target="#loginModal">
+                            {{ __('Login') }}
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link text-white" href="{{ route('register') }}">
+                            {{ __('Register') }}
+                        </a>
+                    </li>
                 @else
-                    <!-- Profile with Picture and First Name -->
+                    <!-- Authenticated User: Profile with Picture and First Name -->
                     <li class="nav-item d-flex align-items-center me-3">
                         @php
                             $profilePic = Auth::user()->profile_picture
@@ -60,7 +59,8 @@
                                 : asset('images/default-profile.png');
                         @endphp
                         <a class="nav-link text-white d-flex align-items-center" href="{{ route('profile') }}">
-                            <img src="{{ $profilePic }}" alt="Profile Picture" class="rounded-circle" style="width: 40px; height: 40px; object-fit: cover;">
+                            <img src="{{ $profilePic }}" alt="Profile Picture" class="rounded-circle"
+                                 style="width: 40px; height: 40px; object-fit: cover;">
                             <span class="ms-2">{{ Auth::user()->first_name }}</span>
                         </a>
                     </li>
@@ -106,7 +106,7 @@
                         </a>
                         <div class="dropdown-menu dropdown-menu-end" aria-labelledby="navbarDropdown">
                             <a class="dropdown-item" href="{{ route('profile') }}">View Profile</a>
-                            <a class="dropdown-item" href="#">Manage Account</a>
+                            <a class="dropdown-item" href="{{ route('account.manage') }}">Manage Account</a>
                             <form action="{{ route('logout') }}" method="POST" class="d-inline">
                                 @csrf
                                 <button type="submit" class="dropdown-item">Logout</button>
