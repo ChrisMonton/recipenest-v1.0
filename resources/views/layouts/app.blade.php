@@ -22,7 +22,7 @@
       z-index: 1000;
       box-shadow: 0 2px 5px rgba(0,0,0,0.1);
     }
-    body { padding-top: 70px; }
+    body { padding-top: 60px; }
 
     /* Card lift effect */
     .card {

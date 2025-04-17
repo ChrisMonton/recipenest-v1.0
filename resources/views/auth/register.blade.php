@@ -79,7 +79,26 @@
   <div class="reg-box">
     <h3 class="mb-4 text-center">Registration</h3>
     <!-- The form gathers data and then POSTs to a route that processes registration -->
-    <form method="POST" action="{{ route('register') }}" id="registrationForm">
+    <form method="POST" action="{{ route('register.process') }}" id="registrationForm">
+        @csrf
+        {{-- flash status (e.g. “A verification link has been sent…”) --}}
+@if(session('status'))
+<div class="alert alert-success">
+  {{ session('status') }}
+</div>
+@endif
+
+{{-- validation errors --}}
+@if($errors->any())
+<div class="alert alert-danger">
+  <ul class="mb-0">
+    @foreach($errors->all() as $error)
+      <li>{{ $error }}</li>
+    @endforeach
+  </ul>
+</div>
+@endif
+
       @csrf
 
       <!-- STEP 1 -->

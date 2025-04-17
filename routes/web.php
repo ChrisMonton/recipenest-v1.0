@@ -19,13 +19,22 @@ use App\Http\Controllers\AccountController;
 use App\Http\Controllers\Auth\RegisterController;
 
 // Authentication / Registration
-Auth::routes();
+Auth::routes([
+    'register' => false,    // turn off the default GET/POST /register
+    'verify'   => true,     // turn on email verification routes
+]);
 
-// Registration wizard (2‑step)
-Route::get('/register', [RegisterController::class, 'showStep12Form'])
-     ->name('register.show');
-Route::post('/register', [RegisterController::class, 'processStep12'])
+// Our custom registration pages
+Route::get('register', [RegisterController::class, 'showStep12Form'])
      ->name('register');
+
+Route::post('register', [RegisterController::class, 'processStep12'])
+     ->name('register.process');
+
+// Protect your home/dashboard so only verified users can see it
+Route::get('/home', function () {
+    return view('home');
+})->middleware(['auth', 'verified']);
 
 // Public pages
 Route::get('/',        [HomeController::class, 'index'])->name('homepage');

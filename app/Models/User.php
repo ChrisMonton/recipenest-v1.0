@@ -12,11 +12,15 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Notifications\DatabaseNotification;
+use Illuminate\Contracts\Auth\MustVerifyEmail;
+
+
+
 
 /**
  * @property \Illuminate\Database\Eloquent\Collection|\Illuminate\Notifications\DatabaseNotification[] $notifications
  */
-class User extends Authenticatable
+class User extends Authenticatable implements MustVerifyEmail
 {
     /** @use HasFactory<\Database\Factories\UserFactory> */
     use HasFactory;
@@ -165,4 +169,10 @@ public function portfolio()
         return $this->belongsToMany(\App\Models\Recipe::class, 'likes')
                     ->withTimestamps();
     }
+
+    public function otpCodes()
+{
+    return $this->hasMany(OtpCode::class);
+}
+
 }
